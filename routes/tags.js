@@ -18,19 +18,25 @@ router.get('/', wrap(async (req, res, next) =>{
   const { tag } = req.query;
   
   const tagResult = await Tag.findOne({where: {name : tag}});
-  const emtiResult = await tagResult.getEmoticons();
+  if(!tagResult) return res.status(200).send({list: []});
+
+  const emtiResult = await tagResult.getEmoticons({order: [['copyCount', 'DESC'], ['createdAt', 'DESC']]});
 
   const tagList = await Promise.all(emtiResult.map((el) => el.getTags()));
 
-  let data = [];
+  const list = [];
 
   emtiResult.map((el, idx) => {
-    data.push({
+    list.push({
       id: el.id,
       emoticon: el.text,
       tag: tagList[idx].map((el) => el.name)
     })
   });
+
+  const data = {
+    list
+  }
 
   return res.status(200).send(data);
 
